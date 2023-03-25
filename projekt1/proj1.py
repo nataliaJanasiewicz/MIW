@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 gamesCount= input('how many games? ')
 gc = int(gamesCount)
 game = 1
+auto = input('auto? y/n ')
 
 #possible states
 states = ['Rock','Paper','Scissors']
 
 #all probabilities
-prob = np.array([[0.34, 0.33, 0.33],
-                  [0.34, 0.33, 0.33],
-                  [0.34, 0.33, 0.33]])
+prob = np.array([[1/3, 1/3, 1/3],
+                  [1/3, 1/3, 1/3],
+                  [1/3, 1/3, 1/3]])
 #learning rate
 alfa = 0.02
 
@@ -38,76 +39,29 @@ def fight(com,user):
     print('you lose (-1)')
     indiv_points[game -2] = -1
 
-def learn(i, now):
-    if(now == 'r' and prob[i][0] < 1-(2*alfa) ):
-      prob[i][0] += alfa
-      prob[i][1] -= alfa/2
-      prob[i][2] -= alfa/2
-    if(now == 'p' and prob[i][1] < 1-(2*alfa) ):
+def learn2(i,now):
+    if(now == 'r' and prob[i][1] < 1-(2*alfa) and prob[i][0] > 0+alfa and prob[i][2] > 0+alfa ):
       prob[i][1] += alfa
       prob[i][0] -= alfa/2
       prob[i][2] -= alfa/2
-    if(now == 's' and prob[i][2] < 1-(2*alfa) ):
+    if(now == 'p' and prob[i][2] < 1-(2*alfa) and prob[i][0] > 0+alfa and prob[i][1] > 0+alfa):
       prob[i][2] += alfa
-      prob[i][1] -= alfa/2
       prob[i][0] -= alfa/2
+      prob[i][1] -= alfa/2
+    if(now == 's' and prob[i][0] < 1-(2*alfa) and prob[i][1] > 0+alfa and prob[i][2] > 0+alfa):
+      prob[i][0] += alfa
+      prob[i][1] -= alfa/2
+      prob[i][2] -= alfa/2
 
-def learn2(prev, now):
-  #rock
-  if(prev == 'r'):
-    if(now == 'r'):
-      prob[0][0] += alfa
-      prob[0][1] -= alfa/2
-      prob[0][2] -= alfa/2
-    if(now == 'p'):
-      prob[0][1] += alfa
-      prob[0][0] -= alfa/2
-      prob[0][2] -= alfa/2
-    if(now == 's'):
-      prob[0][2] += alfa
-      prob[0][1] -= alfa/2
-      prob[0][0] -= alfa/2
-  #paper
-  if(prev == 'p'):
-    if(now == 'r'):
-      prob[1][0] += alfa
-      prob[1][1] -= alfa/2
-      prob[1][2] -= alfa/2
-    if(now == 'p'):
-      prob[1][1] += alfa
-      prob[1][0] -= alfa/2
-      prob[1][2] -= alfa/2
-    if(now == 's'):
-      prob[1][2] += alfa
-      prob[1][1] -= alfa/2
-      prob[1][0] -= alfa/2
-  #scissors
-  if(prev == 's'):
-    if(now == 'r'):
-      prob[2][0] += alfa
-      prob[2][1] -= alfa/2
-      prob[2][2] -= alfa/2
-    if(now == 'p'):
-      prob[2][1] += alfa
-      prob[2][0] -= alfa/2
-      prob[2][2] -= alfa/2
-    if(now == 's'):
-      prob[2][2] += alfa
-      prob[2][1] -= alfa/2
-      prob[2][0] -= alfa/2
+def playAuto():
+    return np.random.choice(['r','p','s'], p=[0.2,0.2,0.6])
+    
 
 def firstGame():
   return np.random.choice(['r','p','s'], p=[1/3,1/3,1/3])
 
-def comChoice(i):
-    index = np.argmax(prob[i])
-    print('table: ', prob[i])
-    if(index == 0):
-      return 'p'
-    if(index == 1):
-      return 's'
-    if(index == 2):
-      return 'r'
+def comChoice2(i):
+    return np.random.choice(['r','p','s'], p = prob[i])
 
 def getIndex(x):
     if(x == 'r'):
@@ -118,13 +72,15 @@ def getIndex(x):
         return 2
 
 def getName(i):
-    return states[i]
+    return states[int(i)]
 
 while game <= gc:
     print('\nGame number: ', game)
     game = game + 1
-    user= input('choose r,p,s? ')
-
+    if(auto == 'y'):
+      user = playAuto()
+    else:
+      user= input('choose r,p,s? ')
     if(prev == ''):
         com = firstGame()
         print('you   vs   comp')
@@ -132,25 +88,27 @@ while game <= gc:
         fight(com, user)
         prev = user
     else:
-        com = comChoice(getIndex(prev))
+        print('prob for prev: ', prev, ' = ',prob[getIndex(prev)])
+        com = comChoice2(getIndex(prev))
         print('you   vs   comp')
         print(getName(getIndex(user)), ' vs ', getName(getIndex(com)))
         fight(com, user)
-        learn(getIndex(prev), user)
+        learn2(getIndex(prev), user)
         prev = user
     result = result + indiv_points[game -2]
     sum_points[game-2] = result
     print('your score: ', result)
 
-print('THE END')
+print('\nTHE END')
 print('individual points')
 print(indiv_points)
 print('the course of the game')
 print(sum_points)
-print('your score: ', result)
+print('====== your score: ', result, ' =======')
 
 #graph for sum
-plt.plot(sum_points, 'ro')
+plt.plot(sum_points, color='pink', marker='o', linestyle='dashed',linewidth=1, markersize=3)
+#plt.plot(sum_points, color='pink')
 plt.ylabel('Points')
 plt.xlabel('Games')
 plt.show()
